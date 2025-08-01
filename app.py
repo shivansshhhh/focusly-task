@@ -1,16 +1,27 @@
+import re
+import requests
+import os
+import json
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-import re
-import requests
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
 
-# Firebase Init
-cred = credentials.Certificate('firebase_key.json')  # <- You'll add this next
+# Use environment variable for the Flask secret key
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
+
+# Firebase Init from JSON string in environment variable
+firebase_key_json = os.environ.get("FIREBASE_KEY_JSON")
+
+if not firebase_key_json:
+    raise RuntimeError("Missing FIREBASE_KEY_JSON environment variable.")
+
+# Load Firebase credentials from JSON string
+cred = credentials.Certificate(json.loads(firebase_key_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
+
 
 def get_client_ip():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
